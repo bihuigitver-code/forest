@@ -100,7 +100,7 @@ export const RecruitmentApplyPage: React.FC<RecruitmentApplyPageProps> = ({ init
   const [submittedAppNo, setSubmittedAppNo] = useState<string | null>(null);
   const [submittedUtr, setSubmittedUtr] = useState<string>('');
   const [submittedScreenshot, setSubmittedScreenshot] = useState<string | null>(null);
-  const [tempAppRef] = useState<string>('FD-REC-2026-784192');
+  const [tempAppRef] = useState<string>(() => `FD-REC-2026-${Math.floor(100000 + Math.random() * 900000)}`);
 
   const getFeeInfo = (cat: string) => {
     switch (cat) {
@@ -145,8 +145,7 @@ export const RecruitmentApplyPage: React.FC<RecruitmentApplyPageProps> = ({ init
   const handlePaymentSuccess = (utr: string, screenshot?: string | null) => {
     setSubmittedUtr(utr);
     if (screenshot) setSubmittedScreenshot(screenshot);
-    const generatedRef = `FD-REC-2026-${Math.floor(100000 + Math.random() * 900000)}`;
-    setSubmittedAppNo(generatedRef);
+    setSubmittedAppNo(tempAppRef);
     window.scrollTo({ top: 100, behavior: 'smooth' });
   };
 

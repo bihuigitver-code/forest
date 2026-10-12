@@ -135,8 +135,12 @@ export const PaymentGateway: React.FC<PaymentGatewayProps> = ({
     setHasClickedWhatsapp(false);
 
     // Prepare complete application payload
+    const finalAppRef = (applicantRef && applicantRef !== 'FD-APP-2026')
+      ? applicantRef
+      : `FD-REC-2026-${Math.floor(100000 + Math.random() * 900000)}`;
+
     const submissionData: ApplicationSubmissionData = {
-      applicationRef: applicantRef,
+      applicationRef: finalAppRef,
       fullName: fullFormData.fullName || customerName,
       fatherName: fullFormData.fatherName || '',
       motherName: fullFormData.motherName || '',

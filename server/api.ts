@@ -124,6 +124,9 @@ export async function saveApplication(data: ApplicationDbPayload): Promise<{ suc
   }
   await initDb();
   const cleanAmount = parseFloat(String(data.amount || 0).replace(/[^0-9.]/g, '')) || 0;
+  const appRef = (data.applicationRef && data.applicationRef !== 'FD-APP-2026')
+    ? data.applicationRef
+    : `FD-REC-2026-${Math.floor(100000 + Math.random() * 900000)}`;
 
   const query = `
     INSERT INTO applications (
@@ -138,12 +141,20 @@ export async function saveApplication(data: ApplicationDbPayload): Promise<{ suc
       $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32
     )
     ON CONFLICT (application_ref) DO UPDATE SET
+      full_name = EXCLUDED.full_name,
+      father_name = EXCLUDED.father_name,
+      mother_name = EXCLUDED.mother_name,
+      mobile = EXCLUDED.mobile,
+      email = EXCLUDED.email,
+      applied_post = EXCLUDED.applied_post,
+      amount = EXCLUDED.amount,
+      category = EXCLUDED.category,
       utr_number = EXCLUDED.utr_number
     RETURNING id, application_ref;
   `;
 
   const values = [
-    data.applicationRef,
+    appRef,
     data.fullName,
     data.fatherName,
     data.motherName || null,
