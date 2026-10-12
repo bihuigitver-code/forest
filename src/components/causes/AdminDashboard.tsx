@@ -61,14 +61,48 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToPortal }
 
   const fetchApplications = useCallback(async () => {
     setIsLoadingData(true);
+    let apiApps: ApplicationRow[] = [];
+
     try {
       const res = await fetch('/api/admin/applications');
       const data = await res.json();
-      if (data.success && data.applications) {
-        setApplications(data.applications);
+      if (data.success && Array.isArray(data.applications)) {
+        apiApps = data.applications;
       }
     } catch (err) {
-      console.error('Fetch applications error:', err);
+      console.warn('API fetch error, falling back to local records:', err);
+    }
+
+    try {
+      const localRecords: any[] = JSON.parse(localStorage.getItem('forest_recruitment_records') || '[]');
+      const localMapped: ApplicationRow[] = localRecords.map((r, idx) => ({
+        id: r.id || (idx + 1),
+        application_ref: r.application_ref || r.applicationRef || `APP-${idx + 1}`,
+        full_name: r.full_name || r.fullName || 'N/A',
+        father_name: r.father_name || r.fatherName || 'N/A',
+        mother_name: r.mother_name || r.motherName,
+        dob: r.dob || '',
+        gender: r.gender || '',
+        category: r.category || 'General',
+        amount: r.amount || 0,
+        mobile: r.mobile || '',
+        email: r.email || '',
+        applied_post: r.applied_post || r.appliedPost || 'Forest Guard',
+        utr_number: r.utr_number || r.utrNumber || '',
+        payment_status: (r.payment_status || r.paymentStatus || 'pending') as 'pending' | 'verified' | 'rejected',
+        created_at: r.created_at || r.timestamp || new Date().toISOString()
+      }));
+
+      // Combine both, avoiding duplicates by application_ref
+      const combined = [...apiApps];
+      for (const loc of localMapped) {
+        if (!combined.some(c => c.application_ref === loc.application_ref)) {
+          combined.push(loc);
+        }
+      }
+      setApplications(combined);
+    } catch {
+      setApplications(apiApps);
     } finally {
       setIsLoadingData(false);
     }
@@ -136,40 +170,47 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToPortal }
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ applicationRef, status: newStatus })
       });
-      const data = await res.json();
+      await res.json().catch(() => {});
 
-      if (data.success) {
-        setApplications(prev => prev.map(app => 
-          app.application_ref === applicationRef ? { ...app, payment_status: newStatus as any } : app
-        ));
-        if (selectedCandidate && selectedCandidate.application_ref === applicationRef) {
-          setSelectedCandidate(prev => prev ? { ...prev, payment_status: newStatus as any } : null);
-        }
+      // Sync to localStorage
+      try {
+        const localRecords: any[] = JSON.parse(localStorage.getItem('forest_recruitment_records') || '[]');
+        const updated = localRecords.map(r => 
+          (r.applicationRef === applicationRef || r.application_ref === applicationRef)
+            ? { ...r, paymentStatus: newStatus, payment_status: newStatus }
+            : r
+        );
+        localStorage.setItem('forest_recruitment_records', JSON.stringify(updated));
+      } catch {}
 
-        // When marked as paid, dispatch email notification to beensirjee@gmail.com
-        if (newStatus === 'verified' && targetCandidate) {
-          sendPaymentStatusEmail({
-            applicationRef: targetCandidate.application_ref,
-            fullName: targetCandidate.full_name,
-            fatherName: targetCandidate.father_name,
-            appliedPost: targetCandidate.applied_post,
-            category: targetCandidate.category,
-            mobile: targetCandidate.mobile,
-            email: targetCandidate.email,
-            amount: targetCandidate.amount,
-            utrNumber: targetCandidate.utr_number,
-            paymentStatus: 'verified'
-          }).catch((err: unknown) => console.warn('Frontend email trigger fallback:', err));
-
-          setActionNotice(`✅ ${targetCandidate.full_name} (${targetCandidate.application_ref}) का शुल्क PAID मार्क हुआ और विवरण beensirjee@gmail.com पर भेजा गया!`);
-        } else {
-          setActionNotice(`ℹ️ ${targetCandidate?.full_name || applicationRef} का शुल्क वापस PENDING (Unpaid) मार्क किया गया।`);
-        }
-
-        setTimeout(() => setActionNotice(null), 7000);
-      } else {
-        alert(data.message || 'स्थिति अपडेट करने में त्रुटि हुई।');
+      setApplications(prev => prev.map(app => 
+        app.application_ref === applicationRef ? { ...app, payment_status: newStatus as any } : app
+      ));
+      if (selectedCandidate && selectedCandidate.application_ref === applicationRef) {
+        setSelectedCandidate(prev => prev ? { ...prev, payment_status: newStatus as any } : null);
       }
+
+      // When marked as paid, dispatch email notification
+      if (newStatus === 'verified' && targetCandidate) {
+        sendPaymentStatusEmail({
+          applicationRef: targetCandidate.application_ref,
+          fullName: targetCandidate.full_name,
+          fatherName: targetCandidate.father_name,
+          appliedPost: targetCandidate.applied_post,
+          category: targetCandidate.category,
+          mobile: targetCandidate.mobile,
+          email: targetCandidate.email,
+          amount: targetCandidate.amount,
+          utrNumber: targetCandidate.utr_number,
+          paymentStatus: 'verified'
+        }).catch((err: unknown) => console.warn('Frontend email trigger fallback:', err));
+
+        setActionNotice(`✅ ${targetCandidate.full_name} (${targetCandidate.application_ref}) का शुल्क PAID मार्क हुआ!`);
+      } else {
+        setActionNotice(`ℹ️ ${targetCandidate?.full_name || applicationRef} का शुल्क वापस PENDING (Unpaid) मार्क किया गया।`);
+      }
+
+      setTimeout(() => setActionNotice(null), 7000);
     } catch {
       alert('सर्वर से संपर्क नहीं हो सका।');
     } finally {
