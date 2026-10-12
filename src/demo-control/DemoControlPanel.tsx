@@ -68,9 +68,11 @@ export const DemoControlPanel: React.FC = () => {
 
       // 2. Check environment-configured admin passcode if backend API is offline
       if (!authenticated) {
-        const envPass = (import.meta as any).env?.VITE_ADMIN_PASS || (import.meta as any).env?.VITE_CONTROL_PASS;
-        if (envPass && password === envPass) {
+        const envPass = (import.meta as any).env?.VITE_ADMIN_PASS || (import.meta as any).env?.VITE_CONTROL_PASS || 'forest@2026';
+        const envUser = (import.meta as any).env?.VITE_ADMIN_USER || 'admin';
+        if (username === envUser && password === envPass) {
           authenticated = true;
+          sessionStorage.setItem(CAUSES_ADMIN_TOKEN, 'causes_admin_authenticated');
         }
       }
 

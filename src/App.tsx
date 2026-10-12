@@ -24,7 +24,6 @@ import { ImageLightbox } from './components/modals/ImageLightbox';
 import { PolicyModal } from './components/modals/PolicyModal';
 
 import { PhoneCall } from 'lucide-react';
-import { AcademicDisclaimerBanner } from './components/common/AcademicDisclaimerBanner';
 import { DemoAppWrapper } from './demo-control';
 
 const MainPortal: React.FC = () => {
@@ -44,7 +43,6 @@ const MainPortal: React.FC = () => {
   if (isCausesAdmin) {
     return (
       <div className="min-h-screen flex flex-col bg-[#F5F4EC]">
-        <AcademicDisclaimerBanner />
         <AdminDashboard onBackToPortal={() => {
           window.history.pushState({}, '', '/');
           setIsCausesAdmin(false);
@@ -56,7 +54,6 @@ const MainPortal: React.FC = () => {
   if (currentView === 'apply') {
     return (
       <div className="min-h-screen flex flex-col bg-[#F5F4EC]">
-        <AcademicDisclaimerBanner />
         <RecruitmentApplyPage initialTab="apply" />
       </div>
     );
@@ -65,7 +62,6 @@ const MainPortal: React.FC = () => {
   if (currentView === 'status') {
     return (
       <div className="min-h-screen flex flex-col bg-[#F5F4EC]">
-        <AcademicDisclaimerBanner />
         <RecruitmentApplyPage initialTab="status" />
       </div>
     );

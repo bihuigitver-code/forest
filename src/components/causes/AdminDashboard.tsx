@@ -102,7 +102,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToPortal }
         setLoginError(data.message || 'अमान्य एडमिन यूज़रनेम या पासवर्ड।');
       }
     } catch {
-      setLoginError('सर्वर से संपर्क करने में त्रुटि हुई।');
+      // Fallback for Vercel static environments when backend API is unreachable
+      const expectedUser = (import.meta as any).env?.VITE_ADMIN_USER || 'admin';
+      const expectedPass = (import.meta as any).env?.VITE_ADMIN_PASS || 'forest@2026';
+      if (username === expectedUser && password === expectedPass) {
+        sessionStorage.setItem('causes_admin_token', 'causes_admin_authenticated');
+        setIsAuthenticated(true);
+        fetchApplications();
+      } else {
+        setLoginError('सर्वर से संपर्क करने में त्रुटि हुई।');
+      }
     } finally {
       setIsLoggingIn(false);
     }
