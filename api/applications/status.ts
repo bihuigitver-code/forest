@@ -1,4 +1,4 @@
-import { getApplicationStatus } from '../../server/api';
+import { getApplicationStatus } from '../../server/api.js';
 
 export default async function handler(req: any, res: any) {
   if (req.method === 'OPTIONS') {

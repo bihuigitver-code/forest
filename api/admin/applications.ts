@@ -1,4 +1,4 @@
-import { getAllApplications } from '../../server/api';
+import { getAllApplications } from '../../server/api.js';
 
 export default async function handler(req: any, res: any) {
   if (req.method === 'OPTIONS') {
