@@ -368,14 +368,6 @@ export const PaymentGateway: React.FC<PaymentGatewayProps> = ({
           ) : (
             <div className="space-y-4">
               {/* College Project Disclaimer Banner */}
-              <div className="bg-amber-50 border border-amber-300 rounded-xl p-3 text-center text-xs text-amber-900 font-semibold flex items-center justify-center gap-2">
-                <AlertCircle className="w-4 h-4 text-amber-700 shrink-0" />
-                <span>
-                  {lang === 'hi' 
-                    ? 'अकादमिक डेमो डिस्क्लेमर: यह केवल कॉलेज प्रोजेक्ट का प्रोटोटाइप है। कृपया कोई वास्तविक राशि का भुगतान न करें।' 
-                    : 'ACADEMIC DEMO NOTICE: This is solely a student project prototype. Do NOT pay any real money.'}
-                </span>
-              </div>
 
               {/* QR Code Card - Real crisp QR added by user without bank clutter */}
               <div className="bg-[#FAFAF7] border-2 border-emerald-600/60 rounded-xl p-4 flex flex-col items-center text-center shadow-sm">

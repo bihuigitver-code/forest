@@ -4,25 +4,34 @@ dotenv.config();
 
 const { Pool } = pg;
 
-const connectionString = process.env.DATABASE_URL || '';
+const getConnectionString = () => process.env.DATABASE_URL || '';
 
-const pool = new Pool({
-  connectionString,
-  ssl: {
-    rejectUnauthorized: false
+let poolInstance: pg.Pool | null = null;
+function getPool(): pg.Pool {
+  const conn = getConnectionString();
+  if (!poolInstance) {
+    poolInstance = new Pool({
+      connectionString: conn,
+      ssl: {
+        rejectUnauthorized: false
+      }
+    });
   }
-});
+  return poolInstance;
+}
 
 let isTableInitialized = false;
 
 export async function initDb(): Promise<boolean> {
-  if (!connectionString) {
-    console.warn('[Neon DB] DATABASE_URL not set in .env');
+  const conn = getConnectionString();
+  if (!conn) {
+    console.warn('[Neon DB] DATABASE_URL not set');
     return false;
   }
   if (isTableInitialized) return true;
 
   try {
+    const pool = getPool();
     await pool.query(`
       CREATE TABLE IF NOT EXISTS applications (
         id SERIAL PRIMARY KEY,
@@ -110,7 +119,7 @@ export interface ApplicationDbPayload {
 }
 
 export async function saveApplication(data: ApplicationDbPayload): Promise<{ success: boolean; message?: string; applicationRef?: string }> {
-  if (!connectionString) {
+  if (!getConnectionString()) {
     return { success: false, message: 'DATABASE_URL not configured' };
   }
   await initDb();
@@ -169,6 +178,7 @@ export async function saveApplication(data: ApplicationDbPayload): Promise<{ suc
   ];
 
   try {
+    const pool = getPool();
     const result = await pool.query(query, values);
     return { success: true, applicationRef: result.rows[0]?.application_ref || data.applicationRef };
   } catch (err: unknown) {
@@ -179,7 +189,7 @@ export async function saveApplication(data: ApplicationDbPayload): Promise<{ suc
 }
 
 export async function getApplicationStatus(queryStr: string): Promise<{ success: boolean; message?: string; application?: Record<string, any> }> {
-  if (!connectionString) {
+  if (!getConnectionString()) {
     return { success: false, message: 'DATABASE_URL not configured' };
   }
   await initDb();
@@ -199,6 +209,7 @@ export async function getApplicationStatus(queryStr: string): Promise<{ success:
   `;
 
   try {
+    const pool = getPool();
     const result = await pool.query(query, [trimmed]);
     if (result.rows.length === 0) {
       return { success: false, message: 'कोई रिकॉर्ड नहीं मिला (No application found with this Mobile, Email, or Application Ref)' };
@@ -222,11 +233,12 @@ export async function adminLogin(user: string, pass: string): Promise<{ success:
 }
 
 export async function getAllApplications(): Promise<{ success: boolean; applications?: Record<string, any>[]; message?: string }> {
-  if (!connectionString) {
+  if (!getConnectionString()) {
     return { success: false, message: 'DATABASE_URL not configured' };
   }
   await initDb();
   try {
+    const pool = getPool();
     const result = await pool.query(`SELECT * FROM applications ORDER BY id DESC`);
     return { success: true, applications: result.rows };
   } catch (err: unknown) {
@@ -236,11 +248,12 @@ export async function getAllApplications(): Promise<{ success: boolean; applicat
 }
 
 export async function updatePaymentStatus(applicationRef: string, status: string): Promise<{ success: boolean; application?: Record<string, any>; message?: string }> {
-  if (!connectionString) {
+  if (!getConnectionString()) {
     return { success: false, message: 'DATABASE_URL not configured' };
   }
   await initDb();
   try {
+    const pool = getPool();
     const result = await pool.query(
       `UPDATE applications SET payment_status = $1 WHERE application_ref = $2 RETURNING *`,
       [status, applicationRef]
